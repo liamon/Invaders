@@ -15,7 +15,7 @@ import java.util.List;
 
 // This must be in a separate package so it cannot access Sprite2D's protected members.
 @SuppressWarnings("serial")
-public class InvadersApplication extends JFrame implements Runnable, KeyListener {
+public class InvadersApplication extends JFrame implements Runnable {
 	public static final Dimension WINDOW_SIZE = new Dimension(720, 850);
 	private static final int NUM_ALIENS = 4 * 7;
 	private static final int VERTICAL_OFFSET = 25;
@@ -69,7 +69,36 @@ public class InvadersApplication extends JFrame implements Runnable, KeyListener
 		strategy = getBufferStrategy();
 		bufferedGraphics = strategy.getDrawGraphics();
 		
-		addKeyListener(this);
+		// I am using a KeyAdapter rather than a KeyListener here as I do not need keyTyped.
+		addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent ke) {
+				int keyCode = ke.getKeyCode();
+				if (isGameRunning) {
+					switch (keyCode) {
+					case KeyEvent.VK_LEFT:
+						playerShip.setXSpeed(-10);
+						break;
+					case KeyEvent.VK_RIGHT:
+						playerShip.setXSpeed(10);
+						break;
+					case KeyEvent.VK_SPACE:
+						bullets.add(playerShip.shootBullet());
+					}
+				} else {
+					isGameRunning = true; // Player can press any key to start new game.
+					startNewGame();
+				}
+			}
+			
+			@Override
+			public void keyReleased(KeyEvent ke) {
+				playerShip.setXSpeed(0);
+				// Do not need move() here as there is no need to stop the ship from
+				// going off the screen. This is because it is now stationary.
+			}
+		});
+		
 		Thread t = new Thread(this);
 		t.start();
 		isGameRunning = true;
@@ -255,25 +284,7 @@ public class InvadersApplication extends JFrame implements Runnable, KeyListener
 
 	}
 	
-	@Override
-	public void keyPressed(KeyEvent ke) {
-		int keyCode = ke.getKeyCode();
-		if (isGameRunning) {
-			switch (keyCode) {
-			case KeyEvent.VK_LEFT:
-				playerShip.setXSpeed(-10);
-				break;
-			case KeyEvent.VK_RIGHT:
-				playerShip.setXSpeed(10);
-				break;
-			case KeyEvent.VK_SPACE:
-				bullets.add(playerShip.shootBullet());
-			}
-		} else {
-			isGameRunning = true; // Player can press any key to start new game.
-			startNewGame();
-		}
-	}
+	
 	
 	private void startNewGame() { // This resets any variables needing to be reset.
 		score = 0;
@@ -282,16 +293,6 @@ public class InvadersApplication extends JFrame implements Runnable, KeyListener
 		alienXSpeed = 5;
 		initializeAliens(alienXSpeed);
 	}
-	
-	@Override
-	public void keyReleased(KeyEvent ke) {
-		playerShip.setXSpeed(0);
-		// Do not need move() here as there is no need to stop the ship from
-		// going off the screen. This is because it is now stationary.
-	}
-	
-	@Override
-	public void keyTyped(KeyEvent ke) { }
 	
 	private void initializeAliens(int xSpeed) {
 		int x, y, row, column;
